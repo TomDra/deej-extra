@@ -35,6 +35,9 @@ button_mapping:
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
+# select if deej should be added to the startup apps list
+run_on_startup: true
+
 # settings for connecting to the arduino board
 com_port: COM6
 baud_rate: 9600
