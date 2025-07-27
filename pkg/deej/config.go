@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/omriharel/deej/pkg/deej/util"
+	"github.com/omriharel/deej/pkg/deej/run_on_startup"
+
 )
 
 // CanonicalConfig provides application-wide access to configuration fields,
@@ -27,6 +29,8 @@ type CanonicalConfig struct {
 	InvertSliders bool
 
 	NoiseReductionLevel string
+
+	RunOnStartup bool // <-- NEW FIELD
 
 	logger             *zap.SugaredLogger
 	notifier           Notifier
@@ -55,6 +59,7 @@ const (
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
+	configKeyRunOnStartup        = "run_on_startup"
 
 	defaultCOMPort  = "COM4"
 	defaultBaudRate = 9600
@@ -92,6 +97,7 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+	userConfig.SetDefault(configKeyRunOnStartup, false)
 
 	internalConfig := viper.New()
 	internalConfig.SetConfigName(internalConfigName)
@@ -149,7 +155,8 @@ func (cc *CanonicalConfig) Load() error {
 	cc.logger.Infow("Config values",
 		"sliderMapping", cc.SliderMapping,
 		"connectionInfo", cc.ConnectionInfo,
-		"invertSliders", cc.InvertSliders)
+		"invertSliders", cc.InvertSliders,
+		"run_on_startup", cc.RunOnStartup)
 
 	return nil
 }
@@ -243,6 +250,7 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 
 	cc.InvertSliders = cc.userConfig.GetBool(configKeyInvertSliders)
 	cc.NoiseReductionLevel = cc.userConfig.GetString(configKeyNoiseReductionLevel)
+	cc.RunOnStartup = cc.userConfig.GetBool(configKeyRunOnStartup)
 
 	cc.logger.Debug("Populated config fields from vipers")
 
@@ -251,6 +259,11 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 
 func (cc *CanonicalConfig) onConfigReloaded() {
 	cc.logger.Debug("Notifying consumers about configuration reload")
+
+	// If run on startup changed
+	if err := startup.Apply(cc.RunOnStartup); err != nil {
+		cc.logger.Warnw("Could not apply run-on-startup setting", "error", err)
+	}
 
 	for _, consumer := range cc.reloadConsumers {
 		consumer <- true
