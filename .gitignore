@@ -13,3 +13,4 @@ releases/
 logs/
 preferences.yaml
 *.exe~
+*.old.md

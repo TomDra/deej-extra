@@ -5,7 +5,7 @@ This release ___________:
 
 **Launch instructions**
 
-- **First-time users:** download the [Arduino sketch](https://github.com/TomDra/deej-extra/blob/master/arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino) and upload it to your board ([see full instructions here](https://github.com/TomDra/deej-extra#build-procedure))
+- **First-time users:** download the [Arduino sketch](https://github.com/TomDra/deej-extra/blob/master/microcontroller-scripts\Arduino\deej-5-sliders-6-buttons-vanilla.ino) and upload it to your board ([see full instructions here](https://github.com/TomDra/deej-extra#build-procedure))
 - Download both `config.yaml` and `deej-extra.exe` (below, under _Assets_) and place them in the same directory
 - Verify that your config has the correct COM port for your Arduino board
 - Launch `deej-extra.exe`. You can always edit the config while deej is running
