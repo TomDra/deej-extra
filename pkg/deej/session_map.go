@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 	"strconv"
+	"os/exec"
 
 	"github.com/omriharel/deej/pkg/deej/util"
 	"github.com/micmonay/keybd_event"
@@ -290,15 +291,38 @@ func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
 
 func (m *sessionMap) handleButtonEvent(event ButtonEvent) {
 	if event.Value == 0 {
-		kb, err := keybd_event.NewKeyBonding()
-		
-		i, err := strconv.Atoi(m.deej.config.ButtonMapping[strconv.Itoa(event.ButtonID)][0])
-		kb.SetKeys(i)
-		m.logger.Debugw("Triggering button","keycodeint",i)
-		// m.logger.Debug(0xAD + 0xFFF)
-		err = kb.Launching() 
-		if err != nil {
-			panic(err)
+		mapping, ok := m.deej.config.ButtonMapping[strconv.Itoa(event.ButtonID)]
+
+		if !ok {
+			m.logger.Warnw("No mapping found for button", "buttonID", event.ButtonID)
+			return
+		}
+
+		switch mapping.Type {
+		case "key":
+			i, err := strconv.Atoi(mapping.Value)
+			if err != nil {
+				m.logger.Errorw("Invalid keycode", "value", mapping.Value)
+				return
+			}
+			kb, err := keybd_event.NewKeyBonding()
+			if err != nil {
+				m.logger.Error("Failed to create key bonding:", err)
+				return
+			}
+			kb.SetKeys(i)
+			m.logger.Debugw("Triggering key press", "keycode", i)
+			if err := kb.Launching(); err != nil {
+				m.logger.Error("Failed to launch key press:", err)
+			}
+		case "script":
+			m.logger.Debugw("Executing script", "path", mapping.Value)
+			cmd := exec.Command(mapping.Value)
+			if err := cmd.Start(); err != nil {
+				m.logger.Errorw("Failed to execute script", "path", mapping.Value, "err", err)
+			}
+		default:
+			m.logger.Warnw("Unknown button type", "type", mapping.Type)
 		}
 	}
 }

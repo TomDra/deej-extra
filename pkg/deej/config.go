@@ -15,11 +15,17 @@ import (
 
 )
 
+type ButtonAction struct {
+	Type  string `mapstructure:"type"`
+	Value string `mapstructure:"value"`
+}
+
 // CanonicalConfig provides application-wide access to configuration fields,
 // as well as loading/file watching logic for deej's configuration file
 type CanonicalConfig struct {
 	SliderMapping *sliderMap
-	ButtonMapping map[string][]string
+	
+	ButtonMapping map[string]ButtonAction
 
 	ConnectionInfo struct {
 		COMPort  string
@@ -233,7 +239,37 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 		cc.internalConfig.GetStringMapStringSlice(configKeySliderMapping),
 	)
 
-	cc.ButtonMapping = cc.userConfig.GetStringMapStringSlice(configKeyButtonMapping)
+	// parse the slider mappings from the user and internal configs
+	rawButtonMap := cc.userConfig.Get(configKeyButtonMapping)
+	cc.ButtonMapping = make(map[string]ButtonAction)
+
+	switch t := rawButtonMap.(type) {
+	case map[string]interface{}:
+		for key, val := range t {
+			switch v := val.(type) {
+			case string:
+				// Support legacy format: button_mapping: { "0": "4274" }
+				cc.ButtonMapping[key] = ButtonAction{
+					Type:  "key",
+					Value: v,
+				}
+			case map[string]interface{}:
+				// New format: type + value
+				typ, _ := v["type"].(string)
+				valStr, _ := v["value"].(string)
+				cc.ButtonMapping[key] = ButtonAction{
+					Type:  typ,
+					Value: valStr,
+				}
+			default:
+				cc.logger.Warnw("Unknown type in button_mapping", "key", key, "value", val)
+			}
+		}
+	default:
+		cc.logger.Warnw("button_mapping has unexpected type", "type", fmt.Sprintf("%T", rawButtonMap))
+	}
+
+	cc.logger.Debugw("Parsed button mapping", "buttonMapping", cc.ButtonMapping)
 
 	// get the rest of the config fields - viper saves us a lot of effort here
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)

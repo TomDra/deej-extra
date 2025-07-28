@@ -8,40 +8,46 @@
 # important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
   0: master
-  1: chrome.exe
-  2: brave.exe
+  1:
+    - chrome.exe
+    - Spotify.exe
+  2: Discord.exe
   3: deej.unmapped
-  4: discord.exe
 
-# supported button list https://github.com/micmonay/keybd_event/blob/master/keybd_windows.go (scroll down)
-# be sure to convert hex values to decimal (hex values start with 0x)
-# for example: to get F13 (0x7C + 0xFFF)
-# 0x7C  = 124
-# 0xFFF = 4095
-# 124 + 4095
-# F13 = 4219
-# 
-# MAKE SURE THE NUMBER OF BUTTONS IN THE CONFIG MATCHES THE NUMBER OF BUTTONS REPORTED BY THE ARDUINO
-# If the number of buttons is not the same, deej might crash 
-#
+
+# For keyboard button mapping (A button presses a key):
+  # supported button list https://github.com/micmonay/keybd_event/blob/master/keybd_windows.go (scroll down)
+  # be sure to convert hex values to decimal (hex values start with 0x)
+  # for example: to get F13 (0x7C + 0xFFF)
+  # 0x7C  = 124
+  # 0xFFF = 4095
+  # 124 + 4095
+  # F13 = 4219
+# For script button mapping (A button runs a script):
+  # for each item have type: script
+  # and value: '{LOCATION OF SCRIPT}'
+  # Supported script types:
+  # Windows [.bat, .ps1, .exe] Linus/Mac [.sh (and chmod +x must be set)]
 button_mapping:
-  0: 4228
-  1: 4272
-  2: 4274
-  3: 4271
-  4: 4229
-  5: 4230
+  0:
+    type: script
+    value: 'c:\Users\user\Documents\Deej extra\switch-audio-output.bat'
+  1:
+    type: key
+    value: '4274'
+  # Kept support for legacy config. requires quotes
+  2: '4273'
+  
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
-# select if deej should be added to the startup apps list
-run_on_startup: true
-
 # settings for connecting to the arduino board
-com_port: COM6
+com_port: COM4
 baud_rate: 9600
+
+run_on_startup: false
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)
-noise_reduction: low
+noise_reduction: default
