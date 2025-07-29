@@ -30,6 +30,7 @@ type CanonicalConfig struct {
 	ConnectionInfo struct {
 		COMPort  string
 		BaudRate int
+		RetryDuration int
 	}
 
 	InvertSliders bool
@@ -64,11 +65,13 @@ const (
 	configKeyInvertSliders       = "invert_sliders"
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
+	configRetryDuration 		 = "retry_connection_timer"
 	configKeyNoiseReductionLevel = "noise_reduction"
 	configKeyRunOnStartup        = "run_on_startup"
 
 	defaultCOMPort  = "COM4"
 	defaultBaudRate = 9600
+	defaultRetryDuration = 120
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -103,6 +106,7 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+	userConfig.SetDefault(configRetryDuration, defaultRetryDuration)
 	userConfig.SetDefault(configKeyRunOnStartup, false)
 
 	internalConfig := viper.New()
@@ -275,6 +279,8 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 	cc.ConnectionInfo.COMPort = cc.userConfig.GetString(configKeyCOMPort)
 
 	cc.ConnectionInfo.BaudRate = cc.userConfig.GetInt(configKeyBaudRate)
+
+	cc.ConnectionInfo.RetryDuration = cc.userConfig.GetInt(configRetryDuration)
 	if cc.ConnectionInfo.BaudRate <= 0 {
 		cc.logger.Warnw("Invalid baud rate specified, using default value",
 			"key", configKeyBaudRate,

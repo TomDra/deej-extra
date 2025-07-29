@@ -75,66 +75,78 @@ func NewSerialIO(deej *Deej, logger *zap.SugaredLogger) (*SerialIO, error) {
 	return sio, nil
 }
 
-// Start attempts to connect to our arduino chip
+// Start attempts to connect to our arduino chip with retries for a set time
 func (sio *SerialIO) Start() error {
+    // don't allow multiple concurrent connections
+    if sio.connected {
+        sio.logger.Warn("Already connected, can't start another without closing first")
+        return errors.New("serial: connection already active")
+    }
 
-	// don't allow multiple concurrent connections
-	if sio.connected {
-		sio.logger.Warn("Already connected, can't start another without closing first")
-		return errors.New("serial: connection already active")
-	}
+    // set minimum read size according to platform (0 for windows, 1 for linux)
+    minimumReadSize := 0
+    if util.Linux() {
+        minimumReadSize = 1
+    }
 
-	// set minimum read size according to platform (0 for windows, 1 for linux)
-	// this prevents a rare bug on windows where serial reads get congested,
-	// resulting in significant lag
-	minimumReadSize := 0
-	if util.Linux() {
-		minimumReadSize = 1
-	}
+    sio.connOptions = serial.OpenOptions{
+        PortName:        sio.deej.config.ConnectionInfo.COMPort,
+        BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
+        DataBits:        8,
+        StopBits:        1,
+        MinimumReadSize: uint(minimumReadSize),
+    }
 
-	sio.connOptions = serial.OpenOptions{
-		PortName:        sio.deej.config.ConnectionInfo.COMPort,
-		BaudRate:        uint(sio.deej.config.ConnectionInfo.BaudRate),
-		DataBits:        8,
-		StopBits:        1,
-		MinimumReadSize: uint(minimumReadSize),
-	}
+    retryDuration := time.Duration(sio.deej.config.ConnectionInfo.RetryDuration) * time.Second
+    deadline := time.Now().Add(retryDuration)
 
-	sio.logger.Debugw("Attempting serial connection",
-		"comPort", sio.connOptions.PortName,
-		"baudRate", sio.connOptions.BaudRate,
-		"minReadSize", minimumReadSize)
+    sio.logger.Debugw("Attempting serial connection with retries",
+        "comPort", sio.connOptions.PortName,
+        "baudRate", sio.connOptions.BaudRate,
+        "retryDuration", retryDuration,
+    )
 
-	var err error
-	sio.conn, err = serial.Open(sio.connOptions)
-	if err != nil {
+    var err error
+    for {
+        sio.conn, err = serial.Open(sio.connOptions)
+        if err == nil {
+            break // ✅ success
+        }
 
-		// might need a user notification here, TBD
-		sio.logger.Warnw("Failed to open serial connection", "error", err)
-		return fmt.Errorf("open serial connection: %w", err)
-	}
+        sio.logger.Warnw("Failed to open serial connection, retrying...",
+            "error", err,
+            "remaining", time.Until(deadline),
+        )
 
-	namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
+        if time.Now().After(deadline) {
+            return fmt.Errorf("failed to connect to %s within %s: %w",
+                sio.connOptions.PortName, retryDuration, err)
+        }
 
-	namedLogger.Infow("Connected", "conn", sio.conn)
-	sio.connected = true
+        time.Sleep(2 * time.Second) // wait before retrying
+    }
 
-	// read lines or await a stop
-	go func() {
-		connReader := bufio.NewReader(sio.conn)
-		lineChannel := sio.readLine(namedLogger, connReader)
+    // ✅ Connected
+    namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
+    namedLogger.Infow("Connected", "conn", sio.conn)
+    sio.connected = true
 
-		for {
-			select {
-			case <-sio.stopChannel:
-				sio.close(namedLogger)
-			case line := <-lineChannel:
-				sio.handleLine(namedLogger, line)
-			}
-		}
-	}()
+    // read lines or await a stop
+    go func() {
+        connReader := bufio.NewReader(sio.conn)
+        lineChannel := sio.readLine(namedLogger, connReader)
 
-	return nil
+        for {
+            select {
+            case <-sio.stopChannel:
+                sio.close(namedLogger)
+            case line := <-lineChannel:
+                sio.handleLine(namedLogger, line)
+            }
+        }
+    }()
+
+    return nil
 }
 
 // Stop signals us to shut down our serial connection, if one is active
