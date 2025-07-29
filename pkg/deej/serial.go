@@ -19,9 +19,6 @@ import (
 
 // SerialIO provides a deej-aware abstraction layer to managing serial I/O
 type SerialIO struct {
-	comPort  string
-	baudRate uint
-
 	deej   *Deej
 	logger *zap.SugaredLogger
 
@@ -111,7 +108,7 @@ func (sio *SerialIO) Start() error {
     for {
         sio.conn, err = serial.Open(sio.connOptions)
         if err == nil {
-            break // ✅ success
+            break // success
         }
 
         sio.logger.Warnw("Failed to open serial connection, retrying...",
@@ -127,7 +124,7 @@ func (sio *SerialIO) Start() error {
         time.Sleep(2 * time.Second) // wait before retrying
     }
 
-    // ✅ Connected
+    // Connected
     namedLogger := sio.logger.Named(strings.ToLower(sio.connOptions.PortName))
     namedLogger.Infow("Connected", "conn", sio.conn)
     sio.connected = true
