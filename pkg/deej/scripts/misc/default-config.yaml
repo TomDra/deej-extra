@@ -51,12 +51,17 @@ button_mapping:
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
-# select if deej should be added to the startup apps list
-run_on_startup: false
-
 # settings for connecting to the arduino board
 com_port: COM4
 baud_rate: 9600
+
+
+# select if deej should be added to the startup apps list
+run_on_startup: false
+
+# how long the script should try to reconnect to the given COM port if dissconnected or on startup (in seconds)
+# Useful if run_on_startup set to true so that the OS has time to load deej and the COM ports.
+retry_connection_timer: 60
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)

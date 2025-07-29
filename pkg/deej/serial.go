@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/jacobsa/go-serial/serial"
 	"go.uber.org/zap"
@@ -236,10 +237,11 @@ func (sio *SerialIO) readLine(logger *zap.SugaredLogger, reader *bufio.Reader) c
 			if err != nil {
 
 				if sio.deej.Verbose() {
-					logger.Warnw("Failed to read line from serial", "error", err, "line", line)
+					logger.Warnw("Read error from serial (likely disconnected)", "error", err, "line", line)
 				}
 
-				// just ignore the line, the read loop will stop after this
+				// trigger reconnect attempt
+                go sio.reconnect(logger)
 				return
 			}
 
@@ -397,3 +399,50 @@ func (sio *SerialIO) handleLine(logger *zap.SugaredLogger, line string) {
 		}
 	}
 }
+
+func (sio *SerialIO) reconnect(logger *zap.SugaredLogger) {
+    sio.logger.Warn("Serial connection lost, attempting to reconnect...")
+
+    // Close the existing connection safely
+    sio.close(logger)
+
+    retryDuration := time.Duration(sio.deej.config.ConnectionInfo.RetryDuration) * time.Second
+    deadline := time.Now().Add(retryDuration)
+
+    for {
+        conn, err := serial.Open(sio.connOptions)
+        if err == nil {
+            sio.conn = conn
+            sio.connected = true
+            logger.Infow("Reconnected successfully", "port", sio.connOptions.PortName)
+
+            // restart read goroutine
+            go func() {
+                connReader := bufio.NewReader(sio.conn)
+                lineChannel := sio.readLine(logger, connReader)
+                for {
+                    select {
+                    case <-sio.stopChannel:
+                        sio.close(logger)
+                        return
+                    case line := <-lineChannel:
+                        sio.handleLine(logger, line)
+                    }
+                }
+            }()
+            return
+        }
+
+        if time.Now().After(deadline) {
+            logger.Errorw("Failed to reconnect within retry duration", "error", err)
+			logger.Error("Exiting program because serial device could not be reconnected")
+            os.Exit(1)
+            return
+        }
+
+        time.Sleep(2 * time.Second)
+    }
+}
+
+
+

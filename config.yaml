@@ -46,6 +46,9 @@ invert_sliders: false
 com_port: COM4
 baud_rate: 9600
 
+
+retry_connection_timer: 240
+
 run_on_startup: false
 
 # adjust the amount of signal noise reduction depending on your hardware quality
