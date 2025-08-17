@@ -8,10 +8,10 @@
 # important: slider indexes start at 0, regardless of which analog pins you're using!
 slider_mapping:
   0: master
-  1:
+  1: 
     - chrome.exe
-    - Spotify.exe
-  2: Discord.exe
+    - brave.exe
+  2: discord.exe
   3: deej.unmapped
 
 
@@ -28,16 +28,25 @@ slider_mapping:
   # and value: '{LOCATION OF SCRIPT}'
   # Supported script types:
   # Windows [.bat, .ps1, .exe] Linus/Mac [.sh (and chmod +x must be set)]
+
+# MAKE SURE THE NUMBER OF BUTTONS IN THE CONFIG MATCHES THE NUMBER OF BUTTONS REPORTED BY THE ARDUINO
+# If the number of buttons is not the same, deej might crash 
 button_mapping:
   0:
     type: script
-    value: 'c:\Users\user\Documents\Deej extra\switch-audio-output.bat'
+    value: 'c:\Users\user\Documents\Deej-extra\switch-audio-output.bat'
   1:
     type: key
     value: '4274'
-  # Kept support for legacy config. requires quotes
-  2: '4273'
-  
+  2:
+    type: key
+    value: '4273'
+  3:
+    type: script
+    value: 'c:\Users\user\Documents\Deej-extra\turn-desk-lamp-on.psl'
+  # Kept support for legacy config. requires quotes, NOT RECCOMENDED
+  4: '4229'
+  5: '4230'
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
@@ -47,9 +56,12 @@ com_port: COM4
 baud_rate: 9600
 
 
-retry_connection_timer: 240
-
+# select if deej should be added to the startup apps list
 run_on_startup: false
+
+# how long the script should try to reconnect to the given COM port if dissconnected or on startup (in seconds)
+# Useful if run_on_startup set to true so that the OS has time to load deej and the COM ports.
+retry_connection_timer: 60
 
 # adjust the amount of signal noise reduction depending on your hardware quality
 # supported values are "low" (excellent hardware), "default" (regular hardware) or "high" (bad, noisy hardware)

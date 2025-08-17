@@ -11,8 +11,8 @@ slider_mapping:
   1: 
     - chrome.exe
     - brave.exe
-  2: deej.unmapped
-  3: discord.exe
+  2: discord.exe
+  3: deej.unmapped
 
 
 # For keyboard button mapping (A button presses a key):
@@ -34,7 +34,7 @@ slider_mapping:
 button_mapping:
   0:
     type: script
-    value: 'c:\Users\user\Documents\Deej extra\switch-audio-output.bat'
+    value: 'c:\Users\user\Documents\Deej-extra\switch-audio-output.bat'
   1:
     type: key
     value: '4274'
@@ -43,8 +43,8 @@ button_mapping:
     value: '4273'
   3:
     type: script
-    value: 'c:\Users\user\Documents\Deej extra\turn-desk-lamp-on.bat'
-  # Kept support for legacy config. requires quotes
+    value: 'c:\Users\user\Documents\Deej-extra\turn-desk-lamp-on.psl'
+  # Kept support for legacy config. requires quotes, NOT RECCOMENDED
   4: '4229'
   5: '4230'
 
