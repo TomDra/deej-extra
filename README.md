@@ -15,9 +15,17 @@ This fork of deej has support for:
  - Allow buttons to run scripts
  - Reconnecting when disconnected
 
+Current planned additions:
+ - Changing key remapped buttons to use strings instead of numbers e.g. '4218' -> "F11"
+ - LED support (I have not currently decided scope)
+ - Possibly adding support for latching buttons (e.g. for mute buttons that stay pressed/ lit up)
+
 
 Please write an [issue](https://github.com/TomDra/deej-extra/issues) if there are any features you desire or find any errors/bugs in this fork.
 
+Or also feel free to contribute by creating a [pull request](https://github.com/TomDra/deej-extra/pulls) if you belive you can improve things too.
+
+## Deej
 
 deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
 
